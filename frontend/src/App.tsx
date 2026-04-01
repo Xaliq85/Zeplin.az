@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './store/auth'
+import Landing from './pages/landing/Landing'
 import Login from './pages/auth/Login'
 import PanelLayout from './components/layout/PanelLayout'
 import SellerDashboard from './pages/seller/Dashboard'
@@ -60,7 +61,7 @@ export default function App() {
             <Route path="orders" element={<CourierOrders />} />
           </Route>
 
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Landing />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" toastOptions={{ style: { background: '#0f2448', color: '#fff', border: '1px solid rgba(90,156,216,0.2)' } }} />
