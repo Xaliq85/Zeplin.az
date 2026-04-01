@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User, Seller
+from .models import User, Seller, SellerApplication
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -48,3 +48,16 @@ class SellerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seller
         fields = ('id', 'user', 'company_name', 'balance', 'is_verified', 'created_at')
+
+
+class SellerApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SellerApplication
+        fields = ('id', 'first_name', 'last_name', 'phone', 'email', 'note', 'status', 'created_at')
+        read_only_fields = ('id', 'status', 'created_at')
+
+
+class SetPasswordSerializer(serializers.Serializer):
+    uid      = serializers.CharField()
+    token    = serializers.CharField()
+    password = serializers.CharField(min_length=8, write_only=True)

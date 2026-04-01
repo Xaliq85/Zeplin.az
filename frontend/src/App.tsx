@@ -6,6 +6,8 @@ import { useAuthStore } from './store/auth'
 import api from './api/client'
 import Landing from './pages/landing/Landing'
 import Login from './pages/auth/Login'
+import Register from './pages/auth/Register'
+import SetPassword from './pages/auth/SetPassword'
 import PanelLayout from './components/layout/PanelLayout'
 import SellerDashboard from './pages/seller/Dashboard'
 import SellerProducts from './pages/seller/Products'
@@ -44,6 +46,8 @@ export default function App() {
         <AuthBootstrap />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/set-password/:uid/:token" element={<SetPassword />} />
           <Route path="/track/:code" element={<Track />} />
 
           <Route path="/seller" element={<PrivateRoute><PanelLayout /></PrivateRoute>}>

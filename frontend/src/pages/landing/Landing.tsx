@@ -38,7 +38,7 @@ export default function Landing() {
               və pulsuz pickup nöqtələri təklif edirik.
             </p>
             <div className="hero-btns fade-up-4">
-              <button className="btn-primary" onClick={() => scrollTo('seller')}>SATICI OL →</button>
+              <button className="btn-primary" onClick={() => navigate('/register')}>SATICI OL →</button>
               <button className="btn-ghost" onClick={() => scrollTo('how')}>NECƏ İŞLƏYİR</button>
             </div>
             <div className="hero-stats fade-up-4">
@@ -354,7 +354,7 @@ export default function Landing() {
             <div className="seller-form">
               <input type="text" className="seller-input" placeholder="Adınız" />
               <input type="text" className="seller-input" placeholder="WhatsApp nömrəsi" />
-              <button className="btn-primary" style={{ whiteSpace: 'nowrap' }}>QOŞUL →</button>
+              <button className="btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={() => navigate('/register')}>QOŞUL →</button>
             </div>
           </div>
         </div>

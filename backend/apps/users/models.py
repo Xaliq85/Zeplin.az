@@ -21,6 +21,27 @@ class User(AbstractUser):
         return f'{self.get_full_name()} ({self.role})'
 
 
+class SellerApplication(models.Model):
+    class Status(models.TextChoices):
+        PENDING  = 'pending',  'Gözləyir'
+        APPROVED = 'approved', 'Təsdiqləndi'
+        REJECTED = 'rejected', 'Rədd edildi'
+
+    first_name = models.CharField(max_length=100)
+    last_name  = models.CharField(max_length=100)
+    phone      = models.CharField(max_length=20)
+    email      = models.EmailField()
+    note       = models.TextField(blank=True)
+    status     = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f'{self.first_name} {self.last_name} ({self.status})'
+
+
 class Seller(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='seller_profile')
     company_name = models.CharField(max_length=200, blank=True)
