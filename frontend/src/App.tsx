@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
+import { useEffect } from 'react'
 import { useAuthStore } from './store/auth'
+import api from './api/client'
 import Landing from './pages/landing/Landing'
 import Login from './pages/auth/Login'
 import PanelLayout from './components/layout/PanelLayout'
@@ -25,10 +27,21 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
+function AuthBootstrap() {
+  const { isAuthenticated, user, setUser } = useAuthStore()
+  useEffect(() => {
+    if (isAuthenticated && !user) {
+      api.get('/api/auth/me/').then(r => setUser(r.data)).catch(() => {})
+    }
+  }, [isAuthenticated, user, setUser])
+  return null
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <AuthBootstrap />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/track/:code" element={<Track />} />
