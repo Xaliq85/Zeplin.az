@@ -5,9 +5,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.users.permissions import IsAdminOrSeller
-from .models import Order
-from .serializers import OrderSerializer, OrderCreateSerializer, TrackOrderSerializer
+from apps.users.permissions import IsAdminOrSeller, IsAdmin
+from .models import Order, PickupPoint
+from .serializers import OrderSerializer, OrderCreateSerializer, TrackOrderSerializer, PickupPointSerializer
 
 
 class OrderListView(generics.ListCreateAPIView):
@@ -105,3 +105,24 @@ class DashboardStatsView(APIView):
                 cache.set(cache_key, stats, ttl)
 
         return Response(stats)
+
+
+class PickupPointListView(generics.ListCreateAPIView):
+    serializer_class = PickupPointSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAdmin()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = PickupPoint.objects.all()
+        if self.request.query_params.get('active') == 'true':
+            qs = qs.filter(is_active=True)
+        return qs
+
+
+class PickupPointDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAdmin]
+    serializer_class = PickupPointSerializer
+    queryset = PickupPoint.objects.all()

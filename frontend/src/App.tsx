@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/Dashboard'
 import AdminOrders from './pages/admin/Orders'
 import AdminSellers from './pages/admin/Sellers'
 import AdminCouriers from './pages/admin/Couriers'
+import AdminPickups from './pages/admin/Pickups'
 import WarehouseOrders from './pages/warehouse/Orders'
 import WarehouseInventory from './pages/warehouse/Inventory'
 import CourierDashboard from './pages/courier/Dashboard'
@@ -63,7 +64,7 @@ export default function App() {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="sellers" element={<AdminSellers />} />
             <Route path="couriers" element={<AdminCouriers />} />
-            <Route path="pickups" element={<div className="text-white/40 p-8 font-chakra">Pickup nöqtələri — tezliklə</div>} />
+            <Route path="pickups" element={<AdminPickups />} />
             <Route path="reports" element={<div className="text-white/40 p-8 font-chakra">Hesabatlar — tezliklə</div>} />
             <Route path="settings" element={<div className="text-white/40 p-8 font-chakra">Ayarlar — tezliklə</div>} />
           </Route>
