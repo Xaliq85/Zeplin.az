@@ -8,10 +8,15 @@ interface AuthState {
   logout: () => void
 }
 
+const storedUser = localStorage.getItem('zeplin_user')
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
+  user: storedUser ? (JSON.parse(storedUser) as User) : null,
   isAuthenticated: !!localStorage.getItem('access_token'),
-  setUser: (user) => set({ user, isAuthenticated: true }),
+  setUser: (user) => {
+    localStorage.setItem('zeplin_user', JSON.stringify(user))
+    set({ user, isAuthenticated: true })
+  },
   logout: () => {
     localStorage.clear()
     set({ user: null, isAuthenticated: false })
