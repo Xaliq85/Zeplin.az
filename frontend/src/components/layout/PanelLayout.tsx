@@ -1,7 +1,9 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
+import { useOrderUpdates } from '../../hooks/useOrderUpdates'
 
 export default function PanelLayout() {
+  useOrderUpdates()
   return (
     <div className="flex min-h-screen">
       <Sidebar />
