@@ -1,37 +1,282 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../api/client'
-import type { Product } from '../../types'
-import { Package, Search, ArrowUp, ArrowDown } from 'lucide-react'
-import { useState } from 'react'
+import { Package, Search, Plus, X, History, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-export default function WarehouseInventory() {
-  const qc = useQueryClient()
-  const [search, setSearch] = useState('')
+type StockProduct = {
+  id: number
+  name: string
+  sku: string
+  seller_name: string
+  quantity: number
+  shelf_location: string
+  is_active: boolean
+}
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['warehouse-products'],
-    queryFn: () => api.get('/api/products/').then(r => r.data),
+type Movement = {
+  id: number
+  product_name: string
+  product_sku: string
+  direction: 'in' | 'out'
+  reason: string
+  quantity: number
+  note: string
+  created_by_name: string
+  created_at: string
+}
+
+const REASON_LABELS: Record<string, string> = {
+  seller_delivery: 'Satıcı təhvil verdi',
+  order_shipped:   'Sifariş göndərildi',
+  return:          'Geri qaytarma',
+  adjustment:      'Düzəliş',
+  damage:          'Zədə / itki',
+}
+
+function StockInModal({ products, onClose }: { products: StockProduct[]; onClose: () => void }) {
+  const qc = useQueryClient()
+  const [form, setForm] = useState({
+    product: '',
+    quantity: '',
+    shelf_location: '',
+    note: '',
   })
 
-  const updateQty = useMutation({
-    mutationFn: ({ id, quantity }: { id: number; quantity: number }) =>
-      api.patch(`/api/products/${id}/`, { quantity }),
+  const mutation = useMutation({
+    mutationFn: (data: object) => api.post('/api/warehouse/stock/in/', data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['warehouse-products'] })
-      toast.success('Yeniləndi')
+      qc.invalidateQueries({ queryKey: ['warehouse-stock'] })
+      qc.invalidateQueries({ queryKey: ['warehouse-movements'] })
+      toast.success('Stoka əlavə edildi')
+      onClose()
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Xəta baş verdi')
     },
   })
 
-  const products: Product[] = (data?.results || data || []).filter((p: Product) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.sku.toLowerCase().includes(search.toLowerCase())
+  const selectedProduct = products.find(p => String(p.id) === form.product)
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#0f2448] border border-blue-zep/20 rounded-2xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-chakra font-bold text-lg flex items-center gap-2">
+            <ArrowDownToLine size={18} className="text-green-400" />
+            Stoka qəbul et
+          </h2>
+          <button onClick={onClose} className="text-white/40 hover:text-white transition">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-white/40 font-chakra tracking-wider">MƏHSUL</label>
+            <select
+              value={form.product}
+              onChange={e => setForm(f => ({ ...f, product: e.target.value }))}
+              className="w-full mt-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-gold transition"
+            >
+              <option value="">— Seç —</option>
+              {products.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.sku}) — {p.seller_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedProduct && (
+            <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white/40 flex items-center justify-between">
+              <span>Hazırkı stok:</span>
+              <span className={`font-chakra font-bold ${selectedProduct.quantity > 5 ? 'text-green-400' : selectedProduct.quantity > 0 ? 'text-yellow-400' : 'text-red-400'}`}>
+                {selectedProduct.quantity} ədəd
+              </span>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs text-white/40 font-chakra tracking-wider">MİQDAR</label>
+            <input
+              type="number"
+              min="1"
+              value={form.quantity}
+              onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
+              placeholder="0"
+              className="w-full mt-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-gold transition"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-white/40 font-chakra tracking-wider">RƏF YERİ (istəyə bağlı)</label>
+            <input
+              value={form.shelf_location}
+              onChange={e => setForm(f => ({ ...f, shelf_location: e.target.value }))}
+              placeholder="A-12"
+              className="w-full mt-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-gold transition"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-white/40 font-chakra tracking-wider">QEYD</label>
+            <textarea
+              value={form.note}
+              onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+              rows={2}
+              placeholder="Satıcı özü gətirdi..."
+              className="w-full mt-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-gold transition resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg border border-white/10 text-white/50 text-sm font-chakra hover:border-white/20 transition"
+          >
+            LƏĞV ET
+          </button>
+          <button
+            onClick={() => mutation.mutate({
+              product: Number(form.product),
+              quantity: Number(form.quantity),
+              shelf_location: form.shelf_location,
+              note: form.note,
+            })}
+            disabled={mutation.isPending || !form.product || !form.quantity}
+            className="flex-1 py-2.5 rounded-lg bg-green-500 text-white text-sm font-chakra font-bold hover:bg-green-400 transition disabled:opacity-50"
+          >
+            {mutation.isPending ? 'SAXLANILIR...' : 'QƏBUL ET →'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
+}
+
+export default function WarehouseInventory() {
+  const [search, setSearch] = useState('')
+  const [showStockIn, setShowStockIn] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+
+  const { data: stockData, isLoading } = useQuery({
+    queryKey: ['warehouse-stock', search],
+    queryFn: () => api.get(`/api/warehouse/stock/${search ? `?q=${search}` : ''}`).then(r => r.data),
+  })
+
+  const { data: movementsData } = useQuery({
+    queryKey: ['warehouse-movements'],
+    queryFn: () => api.get('/api/warehouse/stock/movements/').then(r => r.data),
+    enabled: showHistory,
+  })
+
+  const products: StockProduct[] = stockData?.results ?? stockData ?? []
+  const movements: Movement[] = movementsData?.results ?? movementsData ?? []
+
+  const totalQty = products.reduce((s, p) => s + p.quantity, 0)
+  const lowStock = products.filter(p => p.quantity <= 3).length
+  const outOfStock = products.filter(p => p.quantity === 0).length
 
   return (
     <div>
-      <h1 className="font-chakra text-2xl font-bold mb-6">Anbar inventarı</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-chakra text-2xl font-bold">Anbar inventarı</h1>
+          <p className="text-white/30 text-sm mt-1">Mallların stok vəziyyəti</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-chakra transition ${
+              showHistory
+                ? 'bg-blue-zep/20 border-blue-light/30 text-blue-light'
+                : 'border-white/10 text-white/40 hover:border-white/20 hover:text-white/60'
+            }`}
+          >
+            <History size={15} /> TARİXÇƏ
+          </button>
+          <button
+            onClick={() => setShowStockIn(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg font-chakra font-bold text-sm hover:bg-green-400 transition"
+          >
+            <Plus size={16} /> STOKA QƏBUL ET
+          </button>
+        </div>
+      </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-[#0f2448] border border-blue-zep/15 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gold/10 border border-gold/20 flex items-center justify-center text-gold">
+            <Package size={18} />
+          </div>
+          <div>
+            <p className="text-xs text-white/40 font-chakra tracking-wider">CƏMİ STOK</p>
+            <p className="text-2xl font-chakra font-bold text-gold">{totalQty}</p>
+          </div>
+        </div>
+        <div className="bg-[#0f2448] border border-blue-zep/15 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400">
+            <Package size={18} />
+          </div>
+          <div>
+            <p className="text-xs text-white/40 font-chakra tracking-wider">AZ STOK (≤3)</p>
+            <p className="text-2xl font-chakra font-bold text-yellow-400">{lowStock}</p>
+          </div>
+        </div>
+        <div className="bg-[#0f2448] border border-blue-zep/15 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+            <Package size={18} />
+          </div>
+          <div>
+            <p className="text-xs text-white/40 font-chakra tracking-wider">TÜKƏNİB</p>
+            <p className="text-2xl font-chakra font-bold text-red-400">{outOfStock}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* History panel */}
+      {showHistory && (
+        <div className="bg-[#0f2448] border border-blue-zep/15 rounded-xl mb-6 overflow-hidden">
+          <div className="px-4 py-3 border-b border-blue-zep/15">
+            <p className="font-chakra font-bold text-sm">Son hərəkətlər</p>
+          </div>
+          {movements.length === 0 ? (
+            <p className="text-white/30 text-center py-8 text-sm">Hərəkət yoxdur</p>
+          ) : (
+            <div className="divide-y divide-blue-zep/10 max-h-64 overflow-y-auto">
+              {movements.map(m => (
+                <div key={m.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                    m.direction === 'in' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                  }`}>
+                    {m.direction === 'in'
+                      ? <ArrowDownToLine size={14} />
+                      : <ArrowUpFromLine size={14} />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white font-medium truncate">{m.product_name}</p>
+                    <p className="text-xs text-white/30">{REASON_LABELS[m.reason] || m.reason}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`text-sm font-chakra font-bold ${m.direction === 'in' ? 'text-green-400' : 'text-red-400'}`}>
+                      {m.direction === 'in' ? '+' : '-'}{m.quantity}
+                    </p>
+                    <p className="text-xs text-white/20">
+                      {new Date(m.created_at).toLocaleDateString('az-AZ')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Search */}
       <div className="relative mb-4">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
         <input
@@ -42,6 +287,7 @@ export default function WarehouseInventory() {
         />
       </div>
 
+      {/* Table */}
       {isLoading ? (
         <div className="text-white/30 text-center py-20">Yüklənir...</div>
       ) : (
@@ -51,16 +297,17 @@ export default function WarehouseInventory() {
               <tr className="border-b border-blue-zep/15 text-white/40 font-chakra text-xs tracking-wider">
                 <th className="text-left p-4">MƏHSUL</th>
                 <th className="text-left p-4">SKU</th>
+                <th className="text-left p-4">SATICI</th>
                 <th className="text-left p-4">RƏF</th>
-                <th className="text-center p-4">SAY</th>
-                <th className="text-center p-4">ƏMƏLİYYAT</th>
+                <th className="text-center p-4">STOK</th>
               </tr>
             </thead>
             <tbody>
-              {products.map((p: Product) => (
+              {products.map(p => (
                 <tr key={p.id} className="border-b border-blue-zep/10 hover:bg-white/2 transition">
                   <td className="p-4 text-white font-medium">{p.name}</td>
                   <td className="p-4 font-mono text-white/40 text-xs">{p.sku}</td>
+                  <td className="p-4 text-white/50 text-xs">{p.seller_name}</td>
                   <td className="p-4">
                     {p.shelf_location ? (
                       <span className="text-xs px-2 py-1 bg-blue-zep/15 text-blue-light rounded font-chakra">
@@ -71,25 +318,15 @@ export default function WarehouseInventory() {
                     )}
                   </td>
                   <td className="p-4 text-center">
-                    <span className={`text-sm font-chakra font-bold ${p.quantity > 5 ? 'text-green-400' : p.quantity > 0 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    <span className={`text-sm font-chakra font-bold px-3 py-1 rounded-full ${
+                      p.quantity === 0
+                        ? 'bg-red-500/10 text-red-400'
+                        : p.quantity <= 3
+                        ? 'bg-yellow-500/10 text-yellow-400'
+                        : 'bg-green-500/10 text-green-400'
+                    }`}>
                       {p.quantity}
                     </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => updateQty.mutate({ id: p.id, quantity: Math.max(0, p.quantity - 1) })}
-                        className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-red-400 hover:border-red-400/30 transition"
-                      >
-                        <ArrowDown size={13} />
-                      </button>
-                      <button
-                        onClick={() => updateQty.mutate({ id: p.id, quantity: p.quantity + 1 })}
-                        className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-green-400 hover:border-green-400/30 transition"
-                      >
-                        <ArrowUp size={13} />
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))}
@@ -104,6 +341,10 @@ export default function WarehouseInventory() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {showStockIn && (
+        <StockInModal products={products} onClose={() => setShowStockIn(false)} />
       )}
     </div>
   )
