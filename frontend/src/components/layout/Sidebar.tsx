@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/auth'
 import type { Role } from '../../types'
 import {
   LayoutDashboard, Package, ShoppingCart,
-  Truck, MapPin, BarChart2, Settings, LogOut, Warehouse
+  Truck, MapPin, BarChart2, Settings, LogOut, Archive
 } from 'lucide-react'
 
 const menuByRole: Record<Role, { label: string; icon: React.ReactNode; to: string }[]> = {
@@ -13,7 +13,7 @@ const menuByRole: Record<Role, { label: string; icon: React.ReactNode; to: strin
     { label: 'Satıcılar', icon: <Package size={18} />, to: '/admin/sellers' },
     { label: 'Kuryerlər', icon: <Truck size={18} />, to: '/admin/couriers' },
     { label: 'Pickup nöqtələri', icon: <MapPin size={18} />, to: '/admin/pickups' },
-    { label: 'Anbar', icon: <Warehouse size={18} />, to: '/admin/warehouse' },
+    { label: 'Anbar', icon: <Archive size={18} />, to: '/admin/warehouse' },
     { label: 'Hesabatlar', icon: <BarChart2 size={18} />, to: '/admin/reports' },
     { label: 'Ayarlar', icon: <Settings size={18} />, to: '/admin/settings' },
   ],
