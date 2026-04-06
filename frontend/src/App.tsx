@@ -66,6 +66,7 @@ export default function App() {
             <Route path="sellers" element={<AdminSellers />} />
             <Route path="couriers" element={<AdminCouriers />} />
             <Route path="pickups" element={<AdminPickups />} />
+            <Route path="warehouse" element={<AdminWarehouse />} />
             <Route path="reports" element={<div className="text-white/40 p-8 font-chakra">Hesabatlar — tezliklə</div>} />
             <Route path="settings" element={<div className="text-white/40 p-8 font-chakra">Ayarlar — tezliklə</div>} />
           </Route>
