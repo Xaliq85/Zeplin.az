@@ -37,6 +37,7 @@ export function useOrderUpdates() {
         if (data.type === 'order_update') {
           // Invalidate all relevant queries
           queryClient.invalidateQueries({ queryKey: ['orders'] })
+          queryClient.invalidateQueries({ queryKey: ['admin-orders-list'] })
           queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
           queryClient.invalidateQueries({ queryKey: ['order-stats'] })
           queryClient.invalidateQueries({ queryKey: ['seller-dashboard'] })
