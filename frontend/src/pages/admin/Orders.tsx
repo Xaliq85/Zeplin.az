@@ -35,7 +35,6 @@ export default function AdminOrders() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-orders-list'],
     queryFn: () => api.get('/api/orders/').then(r => r.data),
-    refetchInterval: 15000,
   })
 
   const updateStatus = useMutation({

@@ -42,7 +42,6 @@ function usePendingStats(role: Role) {
   return useQuery({
     queryKey: ['order-stats'],
     queryFn: () => api.get('/api/orders/stats/').then(r => r.data),
-    refetchInterval: 15000,
     enabled: role === 'admin' || role === 'seller',
   })
 }
