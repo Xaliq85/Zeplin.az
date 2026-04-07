@@ -38,6 +38,15 @@ class MeView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
+    def retrieve(self, request, *args, **kwargs):
+        data = super().retrieve(request, *args, **kwargs).data
+        if request.user.role == 'seller':
+            try:
+                data['seller_code'] = request.user.seller_profile.seller_code
+            except Exception:
+                pass
+        return Response(data)
+
 
 class UserListView(generics.ListAPIView):
     permission_classes = (IsAdmin,)
@@ -104,15 +113,8 @@ class ApproveApplicationView(APIView):
         user.save()
         seller = Seller.objects.create(user=user, is_verified=True)
 
-        # 100 unikal stiker kodu yarat: ZEP-{seller_code}-{label_number}
-        labels = [
-            SellerLabel(
-                seller=seller,
-                code=f'ZEP-{seller.seller_code}-{str(i).zfill(5)}',
-                label_number=i,
-            )
-            for i in range(1, 101)
-        ]
+        # 1000 universal stiker yarat (1..1000)
+        labels = [SellerLabel(seller=seller, number=i) for i in range(1, 1001)]
         SellerLabel.objects.bulk_create(labels)
 
         token = PasswordResetTokenGenerator().make_token(user)

@@ -7,6 +7,7 @@ export interface User {
   last_name: string
   role: Role
   is_active: boolean
+  seller_code?: string
 }
 
 export interface AuthTokens {

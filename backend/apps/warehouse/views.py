@@ -144,11 +144,20 @@ class ScanLabelView(APIView):
 
         code = code.upper().strip()
 
+        # code format: ZEP-00001-00042
+        label = None
         try:
-            label = SellerLabel.objects.select_related(
-                'seller__user', 'order'
-            ).get(code=code)
-        except SellerLabel.DoesNotExist:
+            parts = code.split('-')
+            if len(parts) == 3 and parts[0] == 'ZEP':
+                seller_code = parts[1]
+                number = int(parts[2])
+                label = SellerLabel.objects.select_related(
+                    'seller__user', 'order'
+                ).get(seller__seller_code=seller_code, number=number)
+        except (ValueError, SellerLabel.DoesNotExist):
+            pass
+
+        if label is None:
             return Response({'detail': 'Stiker tapılmadı.'}, status=status.HTTP_404_NOT_FOUND)
 
         if label.status == SellerLabel.Status.UNUSED:
@@ -184,9 +193,16 @@ class ScanLabelView(APIView):
 
         code = code.upper().strip()
 
+        label = None
         try:
-            label = SellerLabel.objects.select_related('seller', 'order').get(code=code)
-        except SellerLabel.DoesNotExist:
+            parts = code.split('-')
+            if len(parts) == 3 and parts[0] == 'ZEP':
+                label = SellerLabel.objects.select_related('seller', 'order').get(
+                    seller__seller_code=parts[1], number=int(parts[2])
+                )
+        except (ValueError, SellerLabel.DoesNotExist):
+            pass
+        if label is None:
             return Response({'detail': 'Stiker tapılmadı.'}, status=status.HTTP_404_NOT_FOUND)
 
         if label.status == SellerLabel.Status.UNUSED:

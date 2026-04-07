@@ -47,7 +47,7 @@ class SellerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Seller
-        fields = ('id', 'user', 'company_name', 'balance', 'is_verified', 'created_at')
+        fields = ('id', 'user', 'company_name', 'balance', 'is_verified', 'seller_code', 'created_at')
 
 
 class SellerApplicationSerializer(serializers.ModelSerializer):

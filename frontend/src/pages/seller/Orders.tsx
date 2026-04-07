@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../api/client'
+import { useAuthStore } from '../../store/auth'
 import type { Order, OrderStatus } from '../../types'
 import { Plus, X, Search, ScanLine } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -29,6 +30,8 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 
 function NewOrderModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
+  const user = useAuthStore(s => s.user)
+  const sellerCode = user?.seller_code
   const { data: productsData } = useQuery({
     queryKey: ['seller-products'],
     queryFn: () => api.get('/api/products/').then((r) => r.data),
@@ -41,13 +44,12 @@ function NewOrderModal({ onClose }: { onClose: () => void }) {
     customer_address: '',
     type: 'delivery',
     note: '',
-    label_code: '',
+    label_number: '',
     items: [{ product: '', quantity: 1, price: '' }],
   })
   const [scanning, setScanning] = useState(false)
   const [labelError, setLabelError] = useState('')
   const scannerRef = useRef<any>(null)
-  const scanDivRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!scanning) return
@@ -57,9 +59,13 @@ function NewOrderModal({ onClose }: { onClose: () => void }) {
       scannerRef.current = html5QrCode
       html5QrCode.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 100 } },
+        { fps: 10, qrbox: { width: 250, height: 80 } },
         (text: string) => {
-          setForm(f => ({ ...f, label_code: text.toUpperCase().trim() }))
+          // Skanlandıqda tam kod gəlsə (ZEP-XXXXX-NNNNN) yalnız rəqəm hissəsini götür
+          const cleaned = text.toUpperCase().trim()
+          const parts = cleaned.split('-')
+          const num = parts.length === 3 ? parts[2].replace(/^0+/, '') : cleaned.replace(/^0+/, '')
+          setForm(f => ({ ...f, label_number: num }))
           setScanning(false)
           html5QrCode.stop()
           toast.success('Stiker oxundu')
@@ -67,13 +73,14 @@ function NewOrderModal({ onClose }: { onClose: () => void }) {
         () => {}
       ).catch(() => setScanning(false))
     })
-    return () => {
-      scannerRef.current?.stop().catch(() => {})
-    }
+    return () => { scannerRef.current?.stop().catch(() => {}) }
   }, [scanning])
 
   const mutation = useMutation({
-    mutationFn: (data: typeof form) => api.post('/api/orders/', data),
+    mutationFn: (data: typeof form) => api.post('/api/orders/', {
+      ...data,
+      label_number: data.label_number ? Number(data.label_number) : null,
+    }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['seller-orders'] })
       toast.success('Sifariş yaradıldı')
@@ -156,14 +163,20 @@ function NewOrderModal({ onClose }: { onClose: () => void }) {
               </div>
             ))}
           </div>
-          {/* Label code */}
+          {/* Label number */}
           <div>
-            <label className="text-xs text-white/40 font-chakra tracking-wider">STİKER KODU</label>
+            <label className="text-xs text-white/40 font-chakra tracking-wider">STİKER NÖMRƏSİ</label>
             <div className="flex gap-2 mt-1">
+              {sellerCode && (
+                <div className="flex items-center px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white/40 text-sm font-mono shrink-0">
+                  ZEP-{sellerCode}-
+                </div>
+              )}
               <input
-                value={form.label_code}
-                onChange={e => { setForm({ ...form, label_code: e.target.value.toUpperCase() }); setLabelError('') }}
-                placeholder="ZEP-00001-00001"
+                value={form.label_number}
+                onChange={e => { setForm({ ...form, label_number: e.target.value.replace(/\D/g,'') }); setLabelError('') }}
+                placeholder="1 – 1000"
+                maxLength={4}
                 className={`flex-1 px-3 py-2.5 rounded-lg bg-white/5 border text-white text-sm font-mono focus:outline-none transition ${labelError ? 'border-red-500' : 'border-white/10 focus:border-gold'}`}
               />
               <button
@@ -175,8 +188,13 @@ function NewOrderModal({ onClose }: { onClose: () => void }) {
                 <ScanLine size={18} />
               </button>
             </div>
+            {form.label_number && sellerCode && (
+              <p className="text-xs text-green-400/70 mt-1 font-mono">
+                ZEP-{sellerCode}-{String(form.label_number).padStart(5,'0')}
+              </p>
+            )}
             {labelError && <p className="text-xs text-red-400 mt-1">{labelError}</p>}
-            {!form.label_code && <p className="text-xs text-white/20 mt-1">İstəyə bağlıdır — stikeri yapışdırıbsanız daxil edin</p>}
+            {!form.label_number && <p className="text-xs text-white/20 mt-1">İstəyə bağlıdır — stikerdəki nömrəni yazın</p>}
           </div>
 
           {/* Barcode scanner */}

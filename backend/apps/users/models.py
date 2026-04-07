@@ -62,20 +62,28 @@ class Seller(models.Model):
 
 
 class SellerLabel(models.Model):
+    """
+    Universal stikerlər (1-1000). Satıcıya verilən zaman
+    tam kod: ZEP-{seller.seller_code}-{number:05d} kimi qurulur.
+    """
     class Status(models.TextChoices):
         UNUSED = 'unused', 'İstifadə edilməyib'
         USED   = 'used',   'İstifadə edilib'
 
     seller     = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='labels')
-    code       = models.CharField(max_length=20, unique=True)  # ZEP-00042-00001
-    label_number = models.PositiveIntegerField()               # 1..100
+    number     = models.PositiveIntegerField()          # 1..1000
     status     = models.CharField(max_length=10, choices=Status.choices, default=Status.UNUSED)
     order      = models.ForeignKey('orders.Order', null=True, blank=True, on_delete=models.SET_NULL, related_name='label')
     used_at    = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ('seller', 'label_number')
+        ordering = ('seller', 'number')
+        unique_together = ('seller', 'number')
+
+    @property
+    def code(self):
+        return f'ZEP-{self.seller.seller_code}-{self.number:05d}'
 
     def __str__(self):
         return self.code
