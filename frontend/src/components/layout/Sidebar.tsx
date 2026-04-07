@@ -15,6 +15,7 @@ const menuByRole: Record<Role, MenuItem[]> = {
     { label: 'Dashboard',        icon: <LayoutDashboard size={18} />, to: '/admin' },
     { label: 'Sifarişlər',       icon: <ShoppingCart size={18} />,    to: '/admin/orders', badgeKey: 'pending_orders' },
     { label: 'Satıcılar',        icon: <Package size={18} />,         to: '/admin/sellers' },
+    { label: 'Məhsullar',        icon: <Package size={18} />,         to: '/admin/products' },
     { label: 'Kuryerlər',        icon: <Truck size={18} />,           to: '/admin/couriers' },
     { label: 'Pickup nöqtələri', icon: <MapPin size={18} />,          to: '/admin/pickups' },
     { label: 'Anbar',            icon: <Archive size={18} />,         to: '/admin/warehouse' },
