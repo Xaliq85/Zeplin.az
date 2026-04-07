@@ -38,6 +38,7 @@ export function useOrderUpdates() {
           // Invalidate all relevant queries
           queryClient.invalidateQueries({ queryKey: ['orders'] })
           queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
+          queryClient.invalidateQueries({ queryKey: ['order-stats'] })
           queryClient.invalidateQueries({ queryKey: ['seller-dashboard'] })
           queryClient.invalidateQueries({ queryKey: ['courier-all-orders'] })
           queryClient.invalidateQueries({ queryKey: ['warehouse-orders'] })
