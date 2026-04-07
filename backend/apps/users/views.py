@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import User, Seller, SellerApplication
+from .models import User, Seller, SellerApplication, SellerLabel
 from .serializers import (
     CustomTokenObtainPairSerializer,
     RegisterSerializer,
@@ -102,7 +102,18 @@ class ApproveApplicationView(APIView):
         )
         user.set_unusable_password()
         user.save()
-        Seller.objects.create(user=user, is_verified=True)
+        seller = Seller.objects.create(user=user, is_verified=True)
+
+        # 100 unikal stiker kodu yarat: ZEP-{seller_code}-{label_number}
+        labels = [
+            SellerLabel(
+                seller=seller,
+                code=f'ZEP-{seller.seller_code}-{str(i).zfill(5)}',
+                label_number=i,
+            )
+            for i in range(1, 101)
+        ]
+        SellerLabel.objects.bulk_create(labels)
 
         token = PasswordResetTokenGenerator().make_token(user)
         uid   = urlsafe_base64_encode(force_bytes(user.pk))

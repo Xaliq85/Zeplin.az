@@ -40,6 +40,7 @@ class Order(models.Model):
     delivery_fee = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     note = models.TextField(blank=True)
     tracking_code = models.CharField(max_length=20, unique=True)
+    label_code = models.CharField(max_length=20, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

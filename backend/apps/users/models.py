@@ -47,7 +47,35 @@ class Seller(models.Model):
     company_name = models.CharField(max_length=200, blank=True)
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_verified = models.BooleanField(default=False)
+    seller_code = models.CharField(max_length=5, unique=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.seller_code:
+            last = Seller.objects.order_by('-id').first()
+            next_id = (last.id + 1) if last else 1
+            self.seller_code = str(next_id).zfill(5)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.company_name or self.user.get_full_name()
+
+
+class SellerLabel(models.Model):
+    class Status(models.TextChoices):
+        UNUSED = 'unused', 'İstifadə edilməyib'
+        USED   = 'used',   'İstifadə edilib'
+
+    seller     = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='labels')
+    code       = models.CharField(max_length=20, unique=True)  # ZEP-00042-00001
+    label_number = models.PositiveIntegerField()               # 1..100
+    status     = models.CharField(max_length=10, choices=Status.choices, default=Status.UNUSED)
+    order      = models.ForeignKey('orders.Order', null=True, blank=True, on_delete=models.SET_NULL, related_name='label')
+    used_at    = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('seller', 'label_number')
+
+    def __str__(self):
+        return self.code
