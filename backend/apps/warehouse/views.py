@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -19,7 +20,13 @@ class StockListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Product.objects.select_related('seller__user').filter(is_active=True)
+        # Only show products that have been physically received (at least one StockIN)
+        received = StockMovement.objects.filter(
+            product=OuterRef('pk'), direction=StockMovement.Direction.IN
+        )
+        qs = Product.objects.select_related('seller__user').filter(
+            is_active=True
+        ).annotate(ever_received=Exists(received)).filter(ever_received=True)
         if user.role == 'seller':
             qs = qs.filter(seller__user=user)
         # search by name or sku
